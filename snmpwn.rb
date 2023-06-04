@@ -93,6 +93,10 @@ def findusers(arg, live, cmd)
     userfile.each do |user|
       out, err = cmd.run!("snmpwalk -t 10 -r 3 -u #{user} #{host} iso.3.6.1.2.1.1.1.0")
       if err.downcase.include?("timeout")
+        puts "ERROR: #{host} stopped responding... Once it's back, we'll resume...\n       #{user} will be skipped...".yellow.bold
+        File.open('Skipped_Usernames.txt', 'a') do |skipped|
+          skipped.puts "#{user}"
+        end
         until !err.include?("Timeout")
           _output, err, _status = Open3.capture3("snmpwalk #{host}")
           sleep(1) if err.include?("Timeout")
@@ -103,7 +107,7 @@ def findusers(arg, live, cmd)
         users << [user, host]
       elsif err =~ /snmpwalk: Unknown user name/i
         if arg[:showfail]
-          puts "FAILED: '#{user}' on #{host}".red.bold
+          puts "FAILED: '#{user}' on #{host}.\nERROR: #{err}".red.bold
         end
       end
     end
