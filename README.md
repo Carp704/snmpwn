@@ -1,5 +1,5 @@
 ## Credit
-All credit belongs to ![hatlord](https://github.com/hatlord). This is an edit of his work to add design and latency/timeout features.
+All credit belongs to [hatlord](https://github.com/hatlord). This is an edit of his work to add design and latency/timeout features.
 
 ## Overview
 SNMPwn is an SNMPv3 user enumeration and dictionary attack tool. It is a legitimate security tool designed to be used by security professionals and penetration testers against hosts you have permission to test. It takes advantage of the fact that SNMPv3 systems will respond with "Unknown user name" when an SNMP user does not exist, allowing us to cycle through large lists of users to find the ones that do.
@@ -7,14 +7,14 @@ SNMPwn is an SNMPv3 user enumeration and dictionary attack tool. It is a legitim
 ## What does it do?
 - Checks that the hosts you provide are responding to SNMP requests.
 - Enumerates SNMP users by testing each in the list you provide. Think user brute forcing.
-- Attacks the server with the enumerated accounts and your list of passwords and encryption passwords. No need to attack the entire list of users, only live accounts.
+- Performs a dictionary attack on the server with the enumerated accounts and your list of passwords and encryption passwords. No need to attack the entire list of users, only live accounts.
 - Attacks all the different protocol types:
 	- No auth no encryption (noauth)
     - Authentication, no encryption (authnopriv)
     - Authentication and encryption (All types supported, MD5, SHA, DES, AES) - (authpriv)
     
 ## Notes for usage
-Built for and tested on Kali Linux 2.x rolling. Should work on any Linux platform but does not work currently on Mac OSX, but will when I get around to it. This is due to the stdout messages for snmpwalk on OSX being different. This script basically wraps snmpwalk. The version of snmpwalk I used was 5.7.3.
+Built and tested on Kali Linux 2023.1. Should work on any Linux platform. SNMPWN does not work currently on Mac OSX due to the stdout messages for snmpwalk on OSX being different. This script basically wraps snmpwalk. The version of snmpwalk used was 5.9.3.
 
 ## Install
 ````
