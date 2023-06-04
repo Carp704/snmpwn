@@ -48,7 +48,7 @@ def livehosts(arg, hostfile, cmd)
 #
   livehosts =[]
   spinner = TTY::Spinner.new("[:spinner] Checking Host Availability... ", format: :spin_2)
-  hostfile.each do |host|
+  hostfile.uniq.each do |host|
     puts "\n----------------------------------------------------------------------".yellow.bold
     spinner.spin
     puts "\n----------------------------------------------------------------------".yellow.bold
@@ -83,9 +83,6 @@ def livehosts(arg, hostfile, cmd)
 end
 
 def findusers(arg, live, cmd)
-#
-# Use the snmpwalk command to determine valid users on each live host. 
-#
   users = []
   userfile = File.readlines(arg[:users]).map(&:chomp)
   spinner = TTY::Spinner.new("[:spinner] Checking Users... ", format: :spin_2)
@@ -94,43 +91,20 @@ def findusers(arg, live, cmd)
   puts "----------------------------------------------------------------------".yellow.bold
   live.each do |host|
     userfile.each do |user|
-
-      begin
       out, err = cmd.run!("snmpwalk -t 10 -r 3 -u #{user} #{host} iso.3.6.1.2.1.1.1.0")
-      ### DEBUG
-      puts "----------------------------------------------------------------------".blue.bold
-      puts "Trying #{user}...".green.bold
-      #puts "Output: #{out}"
-      #puts "Error: #{err}"
-      #puts "\n----------------------------------------------------------------------".blue.bold
-      ## DEBUG
-        if err.downcase.include?("timeout")
-          raise TTY::Command::TimeoutExceeded, "Timeout exceeded"
+      if err.downcase.include?("timeout")
+        until !err.include?("Timeout")
+          _output, err, _status = Open3.capture3("snmpwalk #{host}")
+          sleep(1) if err.include?("Timeout")
         end
-      rescue TTY::Command::TimeoutExceeded => @timeout
-        if @timeout
-          until !err.include?("Timeout")
-            _output, err, _status = Open3.capture3("snmpwalk #{host}")
-            puts "Timeout: retrying #{user}...".red.bold
-            sleep(1) if err.include?("Timeout")
-            retry
-          end
-        end
-        if !arg[:showfail]
-          spinner.spin
-        end
-        if out =~ /iso.3.6.1.2.1.1.1.0 = STRING:|SNMPv2-MIB::sysDescr.0 = STRING:/i
-          puts "FOUND: '#{user}' on #{host}".green.bold
-          users << [user, host]
-        elsif err =~ /authorizationError/i
-          puts "FOUND: '#{user}' on #{host}".green.bold
-          users << [user, host]
-        elsif err =~ /snmpwalk: Unknown user name/i
-          if arg[:showfail]
+      end
+      if out =~ /iso.3.6.1.2.1.1.1.0 = STRING:|SNMPv2-MIB::sysDescr.0 = STRING:/i || err =~ /authorizationError/i
+        puts "FOUND: '#{user}' on #{host}".green.bold
+        users << [user, host]
+      elsif err =~ /snmpwalk: Unknown user name/i
+        if arg[:showfail]
           puts "FAILED: '#{user}' on #{host}".red.bold
         end
-      puts "----------------------------------------------------------------------".blue.bold
-      end
       end
     end
   end
@@ -144,10 +118,9 @@ def findusers(arg, live, cmd)
       users.each { |user| user.pop }.flatten!.uniq!
       users.sort!
   end
-  puts "\n----------------------------------------------------------------------".yellow.bold
+  puts "----------------------------------------------------------------------".yellow.bold
   users
 end
-
 
 def noauth(arg, users, live, cmd)
   results = []

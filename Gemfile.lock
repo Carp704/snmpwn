@@ -3,6 +3,7 @@ GEM
   specs:
     colorize (0.8.1)
     logger (1.5.3)
+    open3 (0.1.2)
     optimist (3.0.1)
     pastel (0.8.0)
       tty-color (~> 0.5)
@@ -13,7 +14,6 @@ GEM
     tty-cursor (0.7.1)
     tty-spinner (0.9.3)
       tty-cursor (~> 0.7)
-    open3 (0.1.2)
 
 PLATFORMS
   x86_64-linux
@@ -21,11 +21,11 @@ PLATFORMS
 DEPENDENCIES
   colorize
   logger
+  open3
   optimist
   text-table
   tty-command
   tty-spinner
-  open3
 
 BUNDLED WITH
    2.4.13
