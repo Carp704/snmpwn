@@ -1,4 +1,8 @@
-SNMPwn is an SNMPv3 user enumerator and attack tool. It is a legitimate security tool designed to be used by security professionals and penetration testers against hosts you have permission to test. It takes advantage of the fact that SNMPv3 systems will respond with "Unknown user name" when an SNMP user does not exist, allowing us to cycle through large lists of users to find the ones that do.
+## Credit
+All credit belongs to ![hatlord](https://github.com/hatlord). This is an edit of his work to add design and latency/timeout features.
+
+## Overview
+SNMPwn is an SNMPv3 user enumeration and dictionary attack tool. It is a legitimate security tool designed to be used by security professionals and penetration testers against hosts you have permission to test. It takes advantage of the fact that SNMPv3 systems will respond with "Unknown user name" when an SNMP user does not exist, allowing us to cycle through large lists of users to find the ones that do.
 
 ## What does it do?
 - Checks that the hosts you provide are responding to SNMP requests.
@@ -14,13 +18,13 @@ Built for and tested on Kali Linux 2.x rolling. Should work on any Linux platfor
 
 ## Install
 ````
-git clone https://github.com/hatlord/snmpwn.git
+git clone https://github.com/Carp704/snmpwn.git
 cd snmpwn
 gem install bundler  
 bundle install
 ./snmpwn.rb
 ````
-Built for Ruby 2.3.x. Older versions of Ruby may work, but older than 1.9 may not.
+Built for Ruby 3.1.x. Older versions of Ruby may work, but older than 1.9 may not.
 
 ## Run  
 You need to provide the script a list of users, a hosts list, a password list and an encryption password list. Basic users.txt and passwords.txt files are included. You could use passwords.txt for your encryption list also. I would recommend generating one specific to the organisation you are pen testing.
@@ -31,14 +35,3 @@ The command line options are available via `--help` as always and should be clea
 ````
 ./snmpwn.rb --hosts hosts.txt --users users.txt --passlist passwords.txt --enclist passwords.txt
 ````
-
-## Screengrabs
-
-### User Enumeration
-![User Enumeration](https://cloud.githubusercontent.com/assets/5301488/16200880/0a9a54ea-3707-11e6-9d2c-a246276bf034.png)
-
-### Password Attacks
-![Password Attacks](https://cloud.githubusercontent.com/assets/5301488/16200884/0d253fe0-3707-11e6-8f64-5c34526a3f2f.png)
-
-### Summary of results
-![Summary](https://cloud.githubusercontent.com/assets/5301488/16200889/0e7d1b74-3707-11e6-899e-0093de855e89.png)

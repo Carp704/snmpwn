@@ -1,7 +1,9 @@
 #!/usr/bin/env ruby
-#SNMPwn
-#SNMPv3 User Enumeration and Password Attack Script
-#https://github.com/hatlord/snmpwn
+# SNMPwn v2.0
+# SNMPv3 User Enumeration and Dictionary Attack Tool
+# https://github.com/Carp704/snmpwn
+# I made some changes for personal preference
+# All credit remains with Hatlord -- https://github.com/hatlord 
 
 require 'tty-command'
 require 'tty-spinner'
@@ -9,20 +11,23 @@ require 'optimist'
 require 'colorize'
 require 'logger'
 require 'text-table'
+require 'open3'
 
 def arguments
 
   opts = Optimist::options do
-    version "snmpwn v0.97b".light_blue
+    version "snmpwn v2.0".light_blue
     banner <<-EOS
-    snmpwn v0.97b
+    snmpwn v2.0 - SNMPv3 user enumeration and dictionary attack tool.
+    ----------------------------------------------------------------
+
       EOS
 
         opt :hosts, "SNMPv3 Server IP", :type => String
         opt :users, "List of users you want to try", :type => String
         opt :passlist, "Password list for attacks", :type => String
         opt :enclist, "Encryption Password List for AuthPriv types", :type => String
-        opt :timeout, "Specify Timeout, for example 0.2 would be 200 milliseconds. Default 0.3", :default => 0.3
+        opt :timeout, "Specify Timeout, for example 0.2 would be 200 milliseconds. Default 2.0", :default => 2.0
         opt :showfail, "Show failed password attacks"
 
         if ARGV.empty?
@@ -38,37 +43,79 @@ def arguments
 end
 
 def livehosts(arg, hostfile, cmd)
+#
+# Probe the IP addresses in the hosts file to determine if the SNMP service is responding.
+#
   livehosts =[]
   spinner = TTY::Spinner.new("[:spinner] Checking Host Availability... ", format: :spin_2)
-
-  puts "\nChecking that the hosts are live!".green.bold
   hostfile.each do |host|
-    out, err = cmd.run!("snmpwalk #{host}")
+    puts "\n----------------------------------------------------------------------".yellow.bold
     spinner.spin
-      if err !~ /snmpwalk: Timeout/
-        puts "#{host}: LIVE!".green.bold
-        livehosts << host
-      else
-        puts "#{host}: Timeout/No Connection - Removing from host list".red.bold
+    puts "\n----------------------------------------------------------------------".yellow.bold
+      retries = 0 # Initialize counter
+      loop do
+        begin
+          out, err = cmd.run!("snmpwalk #{host}")
+          if err !~ /snmpwalk: Timeout/
+            puts "#{host}: LIVE!".green.bold
+            livehosts << host
+            break
+          else
+            retries += 1 # Increment the counter.
+            if retries < 6
+              puts "Timeout: #{host}. This is attempt #{retries}. Retrying in 10 seconds... ".light_red.bold
+              sleep 10
+            else
+              puts "Maximum retries reached for #{host}. Moving on...".red.bold
+              puts "----------------------------------------------------------------------".yellow.bold
+              break
+            end
+          end
+        end
       end
     end
-  spinner.success('(Complete)')
-  livehosts
+    if livehosts.empty?
+      puts "No live hosts found. Exiting...".magenta.bold
+      exit(1)
+    end
+    spinner.success('(Complete)')
+    livehosts
 end
 
 def findusers(arg, live, cmd)
+#
+# Use the snmpwalk command to determine valid users on each live host. 
+#
   users = []
   userfile = File.readlines(arg[:users]).map(&:chomp)
   spinner = TTY::Spinner.new("[:spinner] Checking Users... ", format: :spin_2)
 
   puts "\nEnumerating SNMPv3 users".light_blue.bold
+  puts "----------------------------------------------------------------------".yellow.bold
   live.each do |host|
     userfile.each do |user|
+
       begin
-      out, err = cmd.run!("snmpwalk -u #{user} #{host} iso.3.6.1.2.1.1.1.0")
-      rescue TTY::Command::TimeoutExceeded => @timeout_error
-        puts "Timeout: #{host} #{user}:#{password}".red.bold if @timeout_error
-      end
+      out, err = cmd.run!("snmpwalk -t 10 -r 3 -u #{user} #{host} iso.3.6.1.2.1.1.1.0")
+      ### DEBUG
+      puts "----------------------------------------------------------------------".blue.bold
+      puts "Trying #{user}...".green.bold
+      #puts "Output: #{out}"
+      #puts "Error: #{err}"
+      #puts "\n----------------------------------------------------------------------".blue.bold
+      ## DEBUG
+        if err.downcase.include?("timeout")
+          raise TTY::Command::TimeoutExceeded, "Timeout exceeded"
+        end
+      rescue TTY::Command::TimeoutExceeded => @timeout
+        if @timeout
+          until !err.include?("Timeout")
+            _output, err, _status = Open3.capture3("snmpwalk #{host}")
+            puts "Timeout: retrying #{user}...".red.bold
+            sleep(1) if err.include?("Timeout")
+            retry
+          end
+        end
         if !arg[:showfail]
           spinner.spin
         end
@@ -82,6 +129,8 @@ def findusers(arg, live, cmd)
           if arg[:showfail]
           puts "FAILED: '#{user}' on #{host}".red.bold
         end
+      puts "----------------------------------------------------------------------".blue.bold
+      end
       end
     end
   end
@@ -95,8 +144,10 @@ def findusers(arg, live, cmd)
       users.each { |user| user.pop }.flatten!.uniq!
       users.sort!
   end
+  puts "\n----------------------------------------------------------------------".yellow.bold
   users
 end
+
 
 def noauth(arg, users, live, cmd)
   results = []
