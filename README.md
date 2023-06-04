@@ -1,5 +1,5 @@
 ## Credit
-All credit belongs to [hatlord](https://github.com/hatlord). This is an edit of his work to add design and latency/timeout features.
+All credit belongs to [hatlord](https://github.com/hatlord). This is an edit of their work to add design and latency/timeout features.
 
 ## Overview
 SNMPwn is an SNMPv3 user enumeration and dictionary attack tool. It is a legitimate security tool designed to be used by security professionals and penetration testers against hosts you have permission to test. It takes advantage of the fact that SNMPv3 systems will respond with "Unknown user name" when an SNMP user does not exist, allowing us to cycle through large lists of users to find the ones that do.
