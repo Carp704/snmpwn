@@ -87,13 +87,13 @@ def findusers(arg, live, cmd)
   userfile = File.readlines(arg[:users]).map(&:chomp)
   spinner = TTY::Spinner.new("[:spinner] Checking Users... ", format: :spin_2)
 
-  puts "\nEnumerating SNMPv3 users".light_blue.bold
+  puts "\nEnumerating SNMPv3 users - Timestamp: #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}".light_blue.bold
   puts "----------------------------------------------------------------------".yellow.bold
   live.each do |host|
     userfile.each do |user|
       out, err = cmd.run!("snmpwalk -t 10 -r 3 -u #{user} #{host} iso.3.6.1.2.1.1.1.0")
       if err.downcase.include?("timeout")
-        puts "ERROR: #{host} stopped responding... Once it's back, we'll resume...\n       #{user} will be skipped...".yellow.bold
+        puts "ERROR: #{host} stopped responding... Once it's back, we'll resume...\n       #{user} will be skipped...\n".yellow.bold
         File.open('Skipped_Usernames.txt', 'a') do |skipped|
           skipped.puts "#{user}"
         end
@@ -107,7 +107,7 @@ def findusers(arg, live, cmd)
         users << [user, host]
       elsif err =~ /snmpwalk: Unknown user name/i
         if arg[:showfail]
-          puts "FAILED: '#{user}' on #{host}.\nERROR: #{err}".red.bold
+          puts "FAILED: #{user} on #{host}.\nERROR: #{err}".red.bold
         end
       end
     end
@@ -122,6 +122,8 @@ def findusers(arg, live, cmd)
       users.each { |user| user.pop }.flatten!.uniq!
       users.sort!
   end
+  puts "----------------------------------------------------------------------".yellow.bold
+  puts "Timestamp: #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}".light_blue.bold
   puts "----------------------------------------------------------------------".yellow.bold
   users
 end
